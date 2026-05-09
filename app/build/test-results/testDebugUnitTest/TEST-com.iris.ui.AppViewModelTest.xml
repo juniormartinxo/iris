@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.iris.ui.AppViewModelTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-05-09T23:25:16" hostname="Jarvis" time="3.391">
-  <properties/>
-  <testcase name="selectModeChangesModeWithoutTriggering" classname="com.iris.ui.AppViewModelTest" time="3.345"/>
-  <testcase name="phaseFollowsGemmaState" classname="com.iris.ui.AppViewModelTest" time="0.045"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
