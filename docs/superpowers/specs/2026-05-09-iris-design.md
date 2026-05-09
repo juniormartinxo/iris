@@ -44,7 +44,7 @@ Perceived latency is much lower thanks to streaming TTS — first audible word a
 - AndroidX Lifecycle ViewModel + StateFlow + Compose
 - Kotlin Coroutines 1.9+
 
-**Model file**: `gemma-4-E2B-it.litertlm` (default) or `gemma-4-E4B-it.litertlm` (preferred when present), sideloaded via `adb push` to `/sdcard/Android/data/com.iris/files/`.
+**Model file**: `gemma-4-E2B-it.litertlm` (preferred default for snappier UX on S21/A55) or `gemma-4-E4B-it.litertlm` (fallback if E2B is missing), sideloaded via `adb push` to `/sdcard/Android/data/com.iris/files/`.
 
 **Source**: `https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm` and `https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm`.
 
