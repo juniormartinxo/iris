@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.iris.camera.FrameQualityTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-05-09T22:59:46" hostname="Jarvis" time="11.744">
+  <properties/>
+  <testcase name="solidColorBitmapHasLowVariance" classname="com.iris.camera.FrameQualityTest" time="11.027"/>
+  <testcase name="whiteBitmapIsTooBright" classname="com.iris.camera.FrameQualityTest" time="0.103"/>
+  <testcase name="blackBitmapIsTooDark" classname="com.iris.camera.FrameQualityTest" time="0.119"/>
+  <testcase name="stripedBitmapHasHighVariance" classname="com.iris.camera.FrameQualityTest" time="0.417"/>
+  <testcase name="stripedBitmapHasNonZeroBlurScore" classname="com.iris.camera.FrameQualityTest" time="0.077"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

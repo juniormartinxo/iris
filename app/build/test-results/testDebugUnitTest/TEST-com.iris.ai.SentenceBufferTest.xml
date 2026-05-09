@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.iris.ai.SentenceBufferTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-05-09T22:59:45" hostname="Jarvis" time="0.14">
+  <properties/>
+  <testcase name="emitsAtPeriod" classname="com.iris.ai.SentenceBufferTest" time="0.119"/>
+  <testcase name="emitsAtQuestionMark" classname="com.iris.ai.SentenceBufferTest" time="0.001"/>
+  <testcase name="emitsNothingWithoutTerminator" classname="com.iris.ai.SentenceBufferTest" time="0.003"/>
+  <testcase name="flushEmitsNothingIfBufferEmpty" classname="com.iris.ai.SentenceBufferTest" time="0.001"/>
+  <testcase name="emitsMultipleSentencesInSingleFeed" classname="com.iris.ai.SentenceBufferTest" time="0.001"/>
+  <testcase name="emitsAtExclamation" classname="com.iris.ai.SentenceBufferTest" time="0.002"/>
+  <testcase name="flushEmitsLeftoverWithoutTerminator" classname="com.iris.ai.SentenceBufferTest" time="0.004"/>
+  <testcase name="trimsLeadingWhitespaceOfSubsequentSentences" classname="com.iris.ai.SentenceBufferTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
