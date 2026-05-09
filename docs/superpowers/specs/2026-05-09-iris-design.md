@@ -1,7 +1,7 @@
 # Iris — Visual Assistant for the Visually Impaired (Design Spec)
 
 **Date:** 2026-05-09
-**Author:** Junior Martins (juniormartins@goapice.com)
+**Author:** Junior Martins (amjr.box@gmail.com)
 **Context:** DEV.to Gemma 4 Challenge submission — deadline 2026-05-24
 **Status:** Approved for implementation planning
 
