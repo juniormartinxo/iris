@@ -56,11 +56,13 @@ class GemmaManager(private val context: Context) {
             return@withContext
         }
 
+        var lastError: ErrorReason? = null
         for ((variant, file) in candidates) {
             try {
                 val options = LlmInference.LlmInferenceOptions.builder()
                     .setModelPath(file.absolutePath)
                     .setMaxNumImages(GemmaConfig.MAX_NUM_IMAGES)
+                    .setMaxTokens(GemmaConfig.MAX_TOKENS)
                     .build()
                 val instance = LlmInference.createFromOptions(context, options)
                 llm = instance
@@ -68,13 +70,14 @@ class GemmaManager(private val context: Context) {
                 _state.value = ModelState.Ready(variant)
                 return@withContext
             } catch (oom: OutOfMemoryError) {
-                _state.value = ModelState.Error(ErrorReason.OOM_DURING_LOAD)
+                lastError = ErrorReason.OOM_DURING_LOAD
                 continue
             } catch (t: Throwable) {
-                _state.value = ModelState.Error(ErrorReason.INIT_FAILED)
+                lastError = ErrorReason.INIT_FAILED
                 continue
             }
         }
+        _state.value = ModelState.Error(lastError ?: ErrorReason.INIT_FAILED)
     }
 
     fun cancelInference() {
