@@ -57,6 +57,8 @@ fun PreflightScreen(
                     onClick = {
                         runCatching {
                             context.startActivity(Intent("com.android.settings.TTS_SETTINGS"))
+                        }.recoverCatching {
+                            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                         }
                     },
                 )
