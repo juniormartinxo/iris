@@ -4,12 +4,14 @@ import android.content.Context
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 
 class TtsManager(private val context: Context) {
@@ -23,6 +25,30 @@ class TtsManager(private val context: Context) {
     private val _ptBrAvailable = MutableStateFlow(false)
     val ptBrAvailable: StateFlow<Boolean> = _ptBrAvailable.asStateFlow()
 
+    private val pending = ConcurrentHashMap<String, CancellableContinuation<Unit>>()
+
+    private val progressListener = object : UtteranceProgressListener() {
+        override fun onStart(utteranceId: String?) {
+            if (utteranceId != null && pending.containsKey(utteranceId)) {
+                _isSpeaking.value = true
+            }
+        }
+        override fun onDone(utteranceId: String?) = resume(utteranceId)
+        override fun onError(utteranceId: String?, errorCode: Int) = resume(utteranceId)
+
+        @Deprecated("kept for API compat")
+        override fun onError(utteranceId: String?) {
+            resume(utteranceId)
+        }
+
+        private fun resume(utteranceId: String?) {
+            if (utteranceId == null) return
+            val cont = pending.remove(utteranceId) ?: return
+            if (pending.isEmpty()) _isSpeaking.value = false
+            if (cont.isActive) cont.resume(Unit)
+        }
+    }
+
     private val tts: TextToSpeech = TextToSpeech(context.applicationContext) { status ->
         if (status == TextToSpeech.SUCCESS) {
             val locale = Locale("pt", "BR")
@@ -33,6 +59,7 @@ class TtsManager(private val context: Context) {
             _ptBrAvailable.value = available
             tts.setSpeechRate(1.0f)
             tts.setPitch(1.0f)
+            tts.setOnUtteranceProgressListener(progressListener)
             _isReady.value = true
         } else {
             _isReady.value = false
@@ -43,39 +70,22 @@ class TtsManager(private val context: Context) {
         if (!_isReady.value || text.isBlank()) return
         suspendCancellableCoroutine<Unit> { cont ->
             val id = UUID.randomUUID().toString()
-            tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) {
-                    if (utteranceId == id) _isSpeaking.value = true
-                }
-                override fun onDone(utteranceId: String?) {
-                    if (utteranceId == id) {
-                        _isSpeaking.value = false
-                        if (cont.isActive) cont.resume(Unit)
-                    }
-                }
-                @Deprecated("kept for API compat")
-                override fun onError(utteranceId: String?) {
-                    if (utteranceId == id) {
-                        _isSpeaking.value = false
-                        if (cont.isActive) cont.resume(Unit)
-                    }
-                }
-                override fun onError(utteranceId: String?, errorCode: Int) {
-                    if (utteranceId == id) {
-                        _isSpeaking.value = false
-                        if (cont.isActive) cont.resume(Unit)
-                    }
-                }
-            })
-            cont.invokeOnCancellation { tts.stop(); _isSpeaking.value = false }
-            val params = Bundle()
-            tts.speak(text, TextToSpeech.QUEUE_ADD, params, id)
+            pending[id] = cont
+            cont.invokeOnCancellation {
+                pending.remove(id)
+                tts.stop()
+                if (pending.isEmpty()) _isSpeaking.value = false
+            }
+            tts.speak(text, TextToSpeech.QUEUE_ADD, Bundle(), id)
         }
     }
 
     fun stop() {
         tts.stop()
+        val drained = pending.values.toList()
+        pending.clear()
         _isSpeaking.value = false
+        drained.forEach { if (it.isActive) it.resume(Unit) }
     }
 
     fun shutdown() {
@@ -83,7 +93,7 @@ class TtsManager(private val context: Context) {
             tts.stop()
             tts.shutdown()
         }
+        stop()
         _isReady.value = false
-        _isSpeaking.value = false
     }
 }
