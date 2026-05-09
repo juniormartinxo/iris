@@ -3,6 +3,8 @@ package com.iris.audio
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -87,11 +89,19 @@ class SpeechManager(private val context: Context) {
     }
 
     private fun cleanup() {
-        runCatching {
-            recognizer?.stopListening()
-            recognizer?.cancel()
-            recognizer?.destroy()
-        }
+        val r = recognizer ?: return
         recognizer = null
+        // SpeechRecognizer must be touched only on the main thread.
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            destroyRecognizer(r)
+        } else {
+            Handler(Looper.getMainLooper()).post { destroyRecognizer(r) }
+        }
+    }
+
+    private fun destroyRecognizer(r: SpeechRecognizer) {
+        runCatching { r.stopListening() }
+        runCatching { r.cancel() }
+        runCatching { r.destroy() }
     }
 }
