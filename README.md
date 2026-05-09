@@ -1,0 +1,65 @@
+# Iris
+
+An offline Android visual assistant for blind and low-vision users. Built for the **DEV.to Gemma 4 Challenge** (deadline 2026-05-24). Runs Gemma 4 multimodal entirely on-device via MediaPipe LiteRT-LM — no cloud calls, no internet required.
+
+## What it does
+
+Point the back camera at something and tap. Iris narrates what it sees in Brazilian Portuguese. Three modes:
+
+- **Contínuo** — describes the scene in front of you.
+- **Pergunta** — ask a specific question by voice.
+- **Leitura** — full OCR-narration of any visible text.
+
+## Requirements
+
+- Android 12+ (minSdk 31)
+- 8GB RAM (Galaxy S21 / Galaxy A55 or better)
+- Free space: ~3GB for the model
+- Offline pt-BR TTS voice pack
+- Offline pt-BR speech recognition pack
+
+## First-time setup (sighted helper)
+
+1. Install the APK:
+   ```bash
+   adb install -r app-debug.apk
+   ```
+
+2. Download the Gemma 4 E2B model from Hugging Face:
+   - https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
+   - Save the file as `gemma-4-E2B-it.litertlm`.
+
+3. Push the model to the phone:
+   ```bash
+   adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/com.iris/files/
+   ```
+
+4. (Optional, for higher quality) Push the E4B variant too. Iris will prefer E4B when both are present.
+
+5. Open the app. The first launch:
+   - Plays a TTS-narrated tutorial.
+   - Pre-flights the offline TTS / STT packs (and opens the right Settings page if missing).
+
+## Architecture
+
+See [`docs/superpowers/specs/2026-05-09-iris-design.md`](docs/superpowers/specs/2026-05-09-iris-design.md).
+
+## Build
+
+```bash
+./gradlew :app:assembleDebug
+./gradlew :app:installDebug
+```
+
+## Test
+
+```bash
+./gradlew :app:testDebugUnitTest                     # unit tests (23 tests)
+./gradlew :app:connectedDebugAndroidTest             # instrumented (needs device)
+```
+
+Manual test plan: [`docs/manual-test-plan.md`](docs/manual-test-plan.md).
+
+## License
+
+Apache 2.0
