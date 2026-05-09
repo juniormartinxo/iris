@@ -1,0 +1,33 @@
+# Android / Gradle
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+out/
+
+# Model files (sideloaded)
+*.litertlm
+*.task
+
+# Crash dumps
+iris_crash.txt
+
+# IDE
+*.swp
+*.swo
+.vscode/
+
+# Claude internal
+.claude/
