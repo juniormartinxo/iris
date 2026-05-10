@@ -202,6 +202,29 @@ class AppViewModel(
         phase is AppPhase.Inferring ||
         phase is AppPhase.Listening
 
+    fun repeat() {
+        val current = _state.value
+        if (current.phase is AppPhase.LoadingModel ||
+            current.phase is AppPhase.FatalError) {
+            return
+        }
+        if (isBusy(current.phase)) {
+            viewModelScope.launch { tts.speak(BUSY_ALERT) }
+            return
+        }
+        val last = current.lastDescription
+        if (last.isBlank()) {
+            viewModelScope.launch {
+                tts.speak("Nada para repetir. Faça uma análise primeiro.")
+            }
+            return
+        }
+        viewModelScope.launch {
+            tts.stop()
+            tts.speak(last)
+        }
+    }
+
     fun retryLoad() {
         viewModelScope.launch { gemma.load() }
     }
