@@ -73,59 +73,93 @@ class AppViewModel(
     }
 
     fun trigger() {
+        if (!precheckOrAlert()) return
+        val current = _state.value
+        inFlightJob = viewModelScope.launch { runFlow(current.mode, announcement = null) }
+    }
+
+    fun selectAndTrigger(mode: AppMode) {
+        if (!precheckOrAlert()) return
+        val current = _state.value
+        val announcement = if (current.mode != mode) {
+            modeFullAnnouncement(mode)
+        } else {
+            modeShortAnnouncement(mode)
+        }
+        _state.update { it.copy(mode = mode) }
+        inFlightJob = viewModelScope.launch { runFlow(mode, announcement) }
+    }
+
+    private fun precheckOrAlert(): Boolean {
         if (isThermallyCritical()) {
             viewModelScope.launch {
                 tts.speak("O aparelho está aquecendo. Aguarde alguns segundos e tente de novo.")
             }
-            return
+            return false
         }
-
         val current = _state.value
         if (current.phase is AppPhase.LoadingModel ||
             current.phase is AppPhase.FatalError) {
-            return
+            return false
         }
         if (isBusy(current.phase)) {
             viewModelScope.launch { tts.speak(BUSY_ALERT) }
-            return
+            return false
         }
+        return true
+    }
 
-        inFlightJob = viewModelScope.launch {
-            runCatching {
-                tts.stop()
-                if (current.mode == AppMode.QUESTION) {
-                    _state.update { it.copy(phase = AppPhase.Listening) }
-                    tts.speak("Faça sua pergunta.")
-                    val sr = speech.listen()
-                    when (sr) {
-                        is SpeechManager.SpeechResult.Recognized ->
-                            runDescribe(question = sr.text)
-                        is SpeechManager.SpeechResult.NoInput -> {
-                            tts.speak("Não entendi. Toque duas vezes para falar de novo.")
-                            _state.update { it.copy(phase = AppPhase.Idle) }
-                        }
-                        is SpeechManager.SpeechResult.NoOfflineModel -> {
-                            tts.speak(
-                                "O reconhecimento de voz offline em português ainda não está " +
-                                "instalado neste celular. Vou abrir as configurações."
-                            )
-                            _state.update { it.copy(phase = AppPhase.Idle) }
-                        }
-                        is SpeechManager.SpeechResult.Error -> {
-                            tts.speak("Erro no reconhecimento de voz. Tente de novo.")
-                            _state.update { it.copy(phase = AppPhase.Idle) }
-                        }
+    private suspend fun runFlow(mode: AppMode, announcement: String?) {
+        runCatching {
+            tts.stop()
+            if (announcement != null) tts.speak(announcement)
+            if (mode == AppMode.QUESTION) {
+                _state.update { it.copy(phase = AppPhase.Listening) }
+                tts.speak("Faça sua pergunta.")
+                val sr = speech.listen()
+                when (sr) {
+                    is SpeechManager.SpeechResult.Recognized ->
+                        runDescribe(question = sr.text)
+                    is SpeechManager.SpeechResult.NoInput -> {
+                        tts.speak("Não entendi. Toque duas vezes para falar de novo.")
+                        _state.update { it.copy(phase = AppPhase.Idle) }
                     }
-                } else {
-                    runDescribe(question = null)
+                    is SpeechManager.SpeechResult.NoOfflineModel -> {
+                        tts.speak(
+                            "O reconhecimento de voz offline em português ainda não está " +
+                            "instalado neste celular. Vou abrir as configurações."
+                        )
+                        _state.update { it.copy(phase = AppPhase.Idle) }
+                    }
+                    is SpeechManager.SpeechResult.Error -> {
+                        tts.speak("Erro no reconhecimento de voz. Tente de novo.")
+                        _state.update { it.copy(phase = AppPhase.Idle) }
+                    }
                 }
-            }.onFailure { t ->
-                if (t !is CancellationException) {
-                    tts.speak("Erro inesperado. Tente de novo.")
-                    _state.update { it.copy(phase = AppPhase.Idle) }
-                }
+            } else {
+                runDescribe(question = null)
+            }
+        }.onFailure { t ->
+            if (t !is CancellationException) {
+                tts.speak("Erro inesperado. Tente de novo.")
+                _state.update { it.copy(phase = AppPhase.Idle) }
             }
         }
+    }
+
+    private fun modeFullAnnouncement(mode: AppMode): String = when (mode) {
+        AppMode.CONTINUOUS ->
+            "Modo Contínuo selecionado. Descreve a cena à frente."
+        AppMode.QUESTION ->
+            "Modo Pergunta selecionado. Faça uma pergunta por voz sobre o que está vendo."
+        AppMode.READING ->
+            "Modo Leitura selecionado. Lê em voz alta o texto da imagem."
+    }
+
+    private fun modeShortAnnouncement(mode: AppMode): String = when (mode) {
+        AppMode.CONTINUOUS -> "Modo Contínuo."
+        AppMode.QUESTION -> "Modo Pergunta."
+        AppMode.READING -> "Modo Leitura."
     }
 
     private suspend fun runDescribe(question: String?) {
