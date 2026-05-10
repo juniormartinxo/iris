@@ -154,7 +154,7 @@ class AppViewModel(
             withTimeout(GemmaConfig.INFERENCE_TIMEOUT_MS) {
                 gemma.describe(frame, _state.value.mode, question).collect { sentence ->
                     collected.append(sentence).append(' ')
-                    tts.speak(sentence)
+                    viewModelScope.launch { tts.speak(sentence) }
                 }
             }
         }.onFailure { t ->
