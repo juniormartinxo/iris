@@ -68,6 +68,7 @@ class AppViewModel(
     }
 
     fun selectMode(mode: AppMode) {
+        if (isBusy(_state.value.phase)) return
         _state.update { it.copy(mode = mode) }
     }
 
@@ -84,13 +85,9 @@ class AppViewModel(
             current.phase is AppPhase.FatalError) {
             return
         }
-        if (current.phase is AppPhase.Capturing ||
-            current.phase is AppPhase.Inferring ||
-            current.phase is AppPhase.Listening) {
-            // Re-tap during inference cancels and restarts.
-            inFlightJob?.cancel()
-            gemma.cancelInference()
-            tts.stop()
+        if (isBusy(current.phase)) {
+            viewModelScope.launch { tts.speak(BUSY_ALERT) }
+            return
         }
 
         inFlightJob = viewModelScope.launch {
@@ -200,6 +197,11 @@ class AppViewModel(
         return pm.currentThermalStatus >= PowerManager.THERMAL_STATUS_CRITICAL
     }
 
+    private fun isBusy(phase: AppPhase): Boolean =
+        phase is AppPhase.Capturing ||
+        phase is AppPhase.Inferring ||
+        phase is AppPhase.Listening
+
     fun retryLoad() {
         viewModelScope.launch { gemma.load() }
     }
@@ -212,5 +214,10 @@ class AppViewModel(
     fun markPreflightDone() {
         prefs.preflightDone = true
         _state.update { it.copy(preflightDone = true) }
+    }
+
+    companion object {
+        private const val BUSY_ALERT =
+            "Aguarde a análise anterior terminar."
     }
 }
