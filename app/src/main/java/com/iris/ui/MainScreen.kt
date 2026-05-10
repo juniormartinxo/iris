@@ -13,21 +13,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,6 +91,55 @@ fun MainScreen(viewModel: AppViewModel) {
                     viewModel.trigger()
                 },
                 onRepeat = { viewModel.repeat() },
+            )
+        }
+
+        AnalyzingOverlay(state.phase)
+    }
+}
+
+@Composable
+private fun AnalyzingOverlay(phase: AppPhase) {
+    val visible = phase is AppPhase.Capturing || phase is AppPhase.Inferring
+    if (!visible) return
+
+    var elapsedSeconds by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        elapsedSeconds = 0
+        while (true) {
+            delay(1000)
+            elapsedSeconds += 1
+        }
+    }
+
+    val minutes = elapsedSeconds / 60
+    val seconds = elapsedSeconds % 60
+    val timeLabel = "%d:%02d".format(minutes, seconds)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xAA000000))
+            .clearAndSetSemantics { },
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(72.dp),
+                color = Color(0xFFFFD600),
+                strokeWidth = 6.dp,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Analisando...",
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = timeLabel,
+                color = Color(0xFFFFD600),
+                style = MaterialTheme.typography.headlineSmall,
             )
         }
     }
