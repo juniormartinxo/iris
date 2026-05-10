@@ -1,11 +1,12 @@
 [versions]
 agp = "8.7.3"
-kotlin = "2.0.21"
+kotlin = "2.3.0"
 compose-bom = "2025.01.01"
 activity-compose = "1.9.3"
 lifecycle = "2.8.7"
 camerax = "1.4.1"
 mediapipe-genai = "0.10.35"
+litert-lm = "0.11.0"
 coroutines = "1.9.0"
 junit = "4.13.2"
 mockk = "1.13.13"
@@ -30,6 +31,7 @@ camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref =
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 mediapipe-tasks-genai = { module = "com.google.mediapipe:tasks-genai", version.ref = "mediapipe-genai" }
 mediapipe-tasks-vision = { module = "com.google.mediapipe:tasks-vision", version.ref = "mediapipe-genai" }
+litert-lm-android = { module = "com.google.ai.edge.litertlm:litertlm-android", version.ref = "litert-lm" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
