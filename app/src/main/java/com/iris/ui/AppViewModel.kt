@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.PowerManager
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.iris.ai.GemmaConfig
@@ -31,6 +32,8 @@ class AppViewModel(
     private val speech: SpeechManager,
     private val prefs: Prefs,
 ) : AndroidViewModel(application) {
+
+    private val TAG = "Iris"
 
     val cameraManager: CameraManager get() = camera
 
@@ -132,11 +135,13 @@ class AppViewModel(
         _state.update { it.copy(phase = AppPhase.Capturing) }
         tts.speak("Analisando.")
 
-        val frame = runCatching { camera.captureFrame() }.getOrElse {
+        val frame = runCatching { camera.captureFrame() }.getOrElse { t ->
+            Log.e(TAG, "captureFrame failed", t)
             tts.speak("Erro na câmera. Tente de novo.")
             _state.update { it.copy(phase = AppPhase.Idle) }
             return
         }
+        Log.i(TAG, "Captured frame ${frame.width}x${frame.height}")
 
         val q = camera.assess(frame)
         val complaint = qualityComplaint(q)
@@ -156,6 +161,7 @@ class AppViewModel(
                 }
             }
         }.onFailure { t ->
+            Log.e(TAG, "Inference failed", t)
             when (t) {
                 is TimeoutCancellationException ->
                     tts.speak("Demorando demais, toque duas vezes para tentar de novo.")
