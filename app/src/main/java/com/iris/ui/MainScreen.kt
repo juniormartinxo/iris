@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -79,10 +80,14 @@ fun MainScreen(viewModel: AppViewModel) {
             ModeBanner(state)
             Spacer(modifier = Modifier.weight(1f))
             DescriptionStrip(state)
-            ModeBar(currentMode = state.mode, onSelect = { mode ->
-                viewModel.selectMode(mode)
-                viewModel.trigger()
-            })
+            ModeBar(
+                currentMode = state.mode,
+                onSelect = { mode ->
+                    viewModel.selectMode(mode)
+                    viewModel.trigger()
+                },
+                onRepeat = { viewModel.repeat() },
+            )
         }
     }
 }
@@ -136,7 +141,11 @@ private fun DescriptionStrip(state: AppState) {
 }
 
 @Composable
-private fun ModeBar(currentMode: AppMode, onSelect: (AppMode) -> Unit) {
+private fun ModeBar(
+    currentMode: AppMode,
+    onSelect: (AppMode) -> Unit,
+    onRepeat: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -164,6 +173,13 @@ private fun ModeBar(currentMode: AppMode, onSelect: (AppMode) -> Unit) {
             description = "Modo Leitura: lê em voz alta o texto da imagem. Toque duas vezes.",
             icon = Icons.AutoMirrored.Filled.MenuBook,
             onClick = { onSelect(AppMode.READING) },
+        )
+        ModeButton(
+            selected = false,
+            label = "Repetir",
+            description = "Repetir a última descrição em voz alta. Toque duas vezes.",
+            icon = Icons.Filled.Replay,
+            onClick = onRepeat,
         )
     }
 }
