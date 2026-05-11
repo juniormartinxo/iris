@@ -50,9 +50,11 @@ Point the back camera at something and tap. Iris narrates what it sees in Brazil
 ## Test
 
 ```bash
-./gradlew :app:testDebugUnitTest                     # unit tests (23 tests)
+./gradlew :app:testDebugUnitTest                     # 23 unit tests (run on JDK 21 toolchain)
 ./gradlew :app:connectedDebugAndroidTest             # instrumented (needs device)
 ```
+
+> **Note:** unit tests run on a JDK 21 toolchain (auto-downloaded by Gradle the first time) because the `litertlm` library is compiled with Java 21 bytecode. The main app code still targets JDK 17.
 
 Manual test plan: [`docs/manual-test-plan.md`](docs/manual-test-plan.md).
 
