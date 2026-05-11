@@ -1,5 +1,9 @@
 # Iris
 
+<p align="center">
+  <img src="docs/assets/iris-logo-192.png" alt="Logo da Iris" width="128">
+</p>
+
 Um assistente visual Android **offline** para pessoas cegas e com baixa visão. Construído para o **DEV.to Gemma 4 Challenge** (prazo 2026-05-24). Roda o Gemma 4 multimodal inteiramente no dispositivo via LiteRT-LM — sem chamadas à nuvem, sem internet necessária.
 
 ## O que faz
