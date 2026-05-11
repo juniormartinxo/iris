@@ -5,9 +5,14 @@ import android.speech.SpeechRecognizer
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iris.audio.SpeechManager
 import com.iris.camera.CameraManager
@@ -24,6 +29,12 @@ import com.iris.ui.screens.PreflightScreen
 import com.iris.ui.screens.TutorialOverlay
 import com.iris.ui.theme.IrisTheme
 import com.iris.util.Prefs
+
+private const val CAMERA_DENIED_PROMPT =
+    "Iris precisa de permissão para usar a câmera. Toque em Tentar novamente."
+private const val CAMERA_DENIED_PERMANENT =
+    "Iris precisa da câmera. Libere a permissão nas configurações do aparelho."
+private const val PERMISSION_RESUMED = "Permissão concedida."
 
 class MainActivity : ComponentActivity() {
 
@@ -48,6 +59,15 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(perms.micGranted) {
                     viewModel.setMicGranted(perms.micGranted)
                 }
+                LaunchedEffect(perms.micPermanentlyDenied) {
+                    viewModel.setMicPermanentlyDenied(perms.micPermanentlyDenied)
+                }
+                SideEffect {
+                    viewModel.onMicRequest = perms.requestMic
+                }
+                DisposableEffect(Unit) {
+                    onDispose { viewModel.onMicRequest = null }
+                }
                 val app = IrisApp.from(this)
                 val ttsAvailable by app.tts.ptBrAvailable.collectAsStateWithLifecycle()
                 val sttAvailable = remember {
@@ -56,12 +76,33 @@ class MainActivity : ComponentActivity() {
 
                 PhaseAnnouncer(state = state, tts = app.tts)
 
+                val cameraDeniedMessage = if (perms.cameraPermanentlyDenied) {
+                    CAMERA_DENIED_PERMANENT
+                } else {
+                    CAMERA_DENIED_PROMPT
+                }
+                var sawCameraDenied by rememberSaveable { mutableStateOf(false) }
+                LaunchedEffect(perms.cameraGranted, perms.cameraPermanentlyDenied) {
+                    if (!perms.cameraGranted) {
+                        sawCameraDenied = true
+                        app.tts.stop()
+                        app.tts.speak(cameraDeniedMessage)
+                    } else if (sawCameraDenied) {
+                        sawCameraDenied = false
+                        app.tts.stop()
+                        app.tts.speak(PERMISSION_RESUMED)
+                    }
+                }
+
+                val cameraRetry = if (perms.cameraPermanentlyDenied) {
+                    perms.openSettings
+                } else {
+                    perms.requestCamera
+                }
+
                 when {
                     !perms.cameraGranted ->
-                        FatalErrorScreen(
-                            message = "Iris precisa de permissão para usar a câmera. Vou pedir agora.",
-                            onRetry = { /* permission re-requested by Permissions composable */ },
-                        )
+                        FatalErrorScreen(message = cameraDeniedMessage, onRetry = cameraRetry)
                     !state.preflightDone && (!ttsAvailable || !sttAvailable) ->
                         PreflightScreen(
                             ttsAvailable = ttsAvailable,
