@@ -52,6 +52,7 @@ fun MainScreen(viewModel: AppViewModel) {
     LaunchedEffect(previewView) {
         val pv = previewView ?: return@LaunchedEffect
         runCatching { viewModel.cameraManager.bind(pv) }
+            .onFailure { viewModel.reportCameraBindFailure(it) }
     }
 
     Box(
