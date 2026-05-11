@@ -10,6 +10,7 @@ import com.iris.audio.TtsManager
 import com.iris.camera.CameraManager
 import com.iris.util.Prefs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -35,10 +36,12 @@ class AppViewModelTest {
     @Before fun setUp() { Dispatchers.setMain(testDispatcher) }
     @After fun tearDown() { Dispatchers.resetMain() }
 
-    private fun newViewModel(
+    private data class Setup(val vm: AppViewModel, val tts: TtsManager)
+
+    private fun newSetup(
         gemmaState: MutableStateFlow<GemmaManager.ModelState> =
             MutableStateFlow(GemmaManager.ModelState.Ready("E2B")),
-    ): AppViewModel {
+    ): Setup {
         val application: Application = mockk(relaxed = true)
         val pm: PowerManager = mockk(relaxed = true)
         every { application.getSystemService(Context.POWER_SERVICE) } returns pm
@@ -57,12 +60,15 @@ class AppViewModelTest {
         every { prefs.tutorialDone } returns true
         every { prefs.preflightDone } returns true
 
-        return AppViewModel(application, gemma, tts, camera, speech, prefs)
+        return Setup(
+            AppViewModel(application, gemma, tts, camera, speech, prefs),
+            tts,
+        )
     }
 
     @Test
     fun selectModeChangesModeWithoutTriggering() = runTest {
-        val vm = newViewModel()
+        val vm = newSetup().vm
         advanceUntilIdle()
         vm.state.test {
             val initial = awaitItem()
@@ -78,7 +84,7 @@ class AppViewModelTest {
 
     @Test
     fun selectQuestionWithoutMicTriggersMicRequest() = runTest {
-        val vm = newViewModel()
+        val vm = newSetup().vm
         advanceUntilIdle()
         vm.setMicGranted(false)
         var requested = false
@@ -95,7 +101,7 @@ class AppViewModelTest {
 
     @Test
     fun selectQuestionWithMicPermanentlyDeniedSkipsRequest() = runTest {
-        val vm = newViewModel()
+        val vm = newSetup().vm
         advanceUntilIdle()
         vm.setMicGranted(false)
         vm.setMicPermanentlyDenied(true)
@@ -107,9 +113,18 @@ class AppViewModelTest {
     }
 
     @Test
+    fun selectModeAnnouncesMode() = runTest {
+        val setup = newSetup()
+        advanceUntilIdle()
+        setup.vm.selectMode(AppMode.READING)
+        advanceUntilIdle()
+        coVerify { setup.tts.announceUi(match { it.contains("Modo Leitura") }) }
+    }
+
+    @Test
     fun phaseFollowsGemmaState() = runTest {
         val gemmaState = MutableStateFlow<GemmaManager.ModelState>(GemmaManager.ModelState.Loading)
-        val vm = newViewModel(gemmaState)
+        val vm = newSetup(gemmaState).vm
         vm.state.test {
             val first = awaitItem()
             assertTrue(first.phase is AppPhase.LoadingModel)
