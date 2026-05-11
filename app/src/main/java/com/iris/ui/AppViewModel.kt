@@ -43,6 +43,8 @@ class AppViewModel(
 
     var onMicRequest: (() -> Unit)? = null
 
+    private val announcedModes = mutableSetOf<AppMode>()
+
     init {
         viewModelScope.launch {
             gemma.state.collect { gs ->
@@ -80,11 +82,11 @@ class AppViewModel(
             handleMicMissing(current)
             return
         }
-        val modeChanged = current.mode != mode
+        val firstAnnounce = announcedModes.add(mode)
         _state.update { it.copy(mode = mode) }
         viewModelScope.launch {
             tts.announceUi(
-                if (modeChanged) modeFullAnnouncement(mode)
+                if (firstAnnounce) modeFullAnnouncement(mode)
                 else modeShortAnnouncement(mode)
             )
         }
