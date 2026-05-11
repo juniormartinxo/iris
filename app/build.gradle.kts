@@ -28,6 +28,10 @@ android {
         }
         release {
             isMinifyEnabled = false
+            // Assinado com debug intencionalmente para a submissão do challenge (sideload em
+            // S21/A55 do autor). Antes de qualquer distribuição pública (Play Store, sideload
+            // amplo), gerar keystore própria e ler de local.properties/env — debug keystore
+            // tem chave pública conhecida e qualquer um pode forjar updates compatíveis.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
