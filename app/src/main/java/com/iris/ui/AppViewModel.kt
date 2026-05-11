@@ -179,7 +179,7 @@ class AppViewModel(
         AppMode.CONTINUOUS ->
             "Modo Contínuo selecionado. Descreve a cena à frente."
         AppMode.QUESTION ->
-            "Modo Pergunta selecionado. Faça uma pergunta por voz sobre o que está vendo."
+            "Modo Pergunta selecionado. Toque na tela e faça sua pergunta."
         AppMode.READING ->
             "Modo Leitura selecionado. Lê em voz alta o texto da imagem."
     }
