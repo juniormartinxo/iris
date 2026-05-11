@@ -20,5 +20,5 @@ data class AppState(
     val modelVariant: String? = null,
     val tutorialDone: Boolean = false,
     val preflightDone: Boolean = false,
-    val micPermissionDenied: Boolean = false,
+    val micGranted: Boolean = true,
 )
