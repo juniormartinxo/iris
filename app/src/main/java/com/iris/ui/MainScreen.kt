@@ -37,8 +37,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -161,7 +163,10 @@ private fun ModeBanner(state: AppState) {
             text = label,
             color = Color.White,
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.semantics { contentDescription = "Modo atual: $label" }
+            modifier = Modifier.semantics {
+                contentDescription = "Modo atual: $label"
+                liveRegion = LiveRegionMode.Polite
+            }
         )
         Spacer(modifier = Modifier.weight(1f))
         state.modelVariant?.let {
