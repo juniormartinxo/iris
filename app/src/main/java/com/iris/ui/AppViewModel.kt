@@ -68,26 +68,30 @@ class AppViewModel(
     }
 
     fun selectMode(mode: AppMode) {
-        if (isBusy(_state.value.phase)) return
+        val current = _state.value
+        if (current.phase is AppPhase.LoadingModel ||
+            current.phase is AppPhase.FatalError) {
+            return
+        }
+        if (isBusy(current.phase)) {
+            viewModelScope.launch { tts.speak(BUSY_ALERT) }
+            return
+        }
+        val modeChanged = current.mode != mode
         _state.update { it.copy(mode = mode) }
+        viewModelScope.launch {
+            tts.stop()
+            tts.speak(
+                if (modeChanged) modeFullAnnouncement(mode)
+                else modeShortAnnouncement(mode)
+            )
+        }
     }
 
     fun trigger() {
         if (!precheckOrAlert()) return
         val current = _state.value
         inFlightJob = viewModelScope.launch { runFlow(current.mode, announcement = null) }
-    }
-
-    fun selectAndTrigger(mode: AppMode) {
-        if (!precheckOrAlert()) return
-        val current = _state.value
-        val announcement = if (current.mode != mode) {
-            modeFullAnnouncement(mode)
-        } else {
-            modeShortAnnouncement(mode)
-        }
-        _state.update { it.copy(mode = mode) }
-        inFlightJob = viewModelScope.launch { runFlow(mode, announcement) }
     }
 
     private fun precheckOrAlert(): Boolean {
