@@ -52,6 +52,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Defesa em profundidade contra tap-jacking: descarta toques entregues através de
+        // overlays não-confiáveis (SYSTEM_ALERT_WINDOW). Reforça o filtro default do API 31+
+        // para um usuário que não tem feedback visual de overlays cobrindo a tela.
+        window.decorView.filterTouchesWhenObscured = true
         setContent {
             IrisTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
