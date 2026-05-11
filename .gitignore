@@ -32,3 +32,8 @@ iris_crash.txt
 
 # Claude internal
 .claude/
+.kotlin/
+.docs-archive/
+
+# Logs
+*.log
