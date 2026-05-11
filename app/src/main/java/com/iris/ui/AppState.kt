@@ -10,7 +10,6 @@ sealed interface AppPhase {
     data object Listening : AppPhase
     data object Capturing : AppPhase
     data object Inferring : AppPhase
-    data object Speaking : AppPhase
     data class FatalError(val message: String) : AppPhase
 }
 
