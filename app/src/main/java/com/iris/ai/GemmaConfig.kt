@@ -18,5 +18,11 @@ object GemmaConfig {
     const val TEMPERATURE = 0.3f
 
     const val IMG_LONGEST_EDGE = 512
-    const val INFERENCE_TIMEOUT_MS = 60_000L
+
+    // Hard cap on the whole generation. Set generously: streaming TTS already starts
+    // around the first-sentence mark, so we'd rather let the model finish than cut
+    // the narration mid-sentence.
+    const val INFERENCE_TIMEOUT_MS = 90_000L
+
+    const val PROGRESS_TICK_INTERVAL_MS = 15_000L
 }
