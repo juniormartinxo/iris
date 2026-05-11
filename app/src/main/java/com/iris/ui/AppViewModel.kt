@@ -15,11 +15,16 @@ import com.iris.camera.CameraManager
 import com.iris.camera.FrameQuality
 import com.iris.util.Prefs
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
@@ -44,6 +49,7 @@ class AppViewModel(
     var onMicRequest: (() -> Unit)? = null
 
     private val announcedModes = mutableSetOf<AppMode>()
+    private var currentOperationJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -115,7 +121,11 @@ class AppViewModel(
             handleMicMissing(current)
             return
         }
-        viewModelScope.launch { runFlow(current.mode, announcement = null) }
+        val previous = currentOperationJob
+        currentOperationJob = viewModelScope.launch {
+            previous?.cancelAndJoin()
+            runFlow(current.mode, announcement = null)
+        }
     }
 
     private fun precheckOrAlert(): Boolean {
@@ -138,7 +148,7 @@ class AppViewModel(
     }
 
     private suspend fun runFlow(mode: AppMode, announcement: String?) {
-        runCatching {
+        try {
             tts.stop()
             if (announcement != null) tts.speak(announcement)
             if (mode == AppMode.QUESTION) {
@@ -167,11 +177,12 @@ class AppViewModel(
             } else {
                 runDescribe(question = null)
             }
-        }.onFailure { t ->
-            if (t !is CancellationException) {
-                tts.speak("Erro inesperado. Tente de novo.")
-                _state.update { it.copy(phase = AppPhase.Idle) }
-            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            Log.e(TAG, "Flow failed", e)
+            tts.speak("Erro inesperado. Tente de novo.")
+            _state.update { it.copy(phase = AppPhase.Idle) }
         }
     }
 
@@ -212,24 +223,58 @@ class AppViewModel(
 
         _state.update { it.copy(phase = AppPhase.Inferring) }
         val collected = StringBuilder()
-        runCatching {
-            withTimeout(GemmaConfig.INFERENCE_TIMEOUT_MS) {
-                gemma.describe(frame, _state.value.mode, question).collect { sentence ->
-                    collected.append(sentence).append(' ')
-                    viewModelScope.launch { tts.speak(sentence) }
+        var firstSentenceSeen = false
+
+        try {
+            coroutineScope {
+                val tickJob = launch {
+                    while (isActive) {
+                        delay(GemmaConfig.PROGRESS_TICK_INTERVAL_MS)
+                        // Progress beacon during slow inference so blind users can
+                        // tell "still working" from "stalled". Cancelled the moment
+                        // the first sentence arrives.
+                        tts.announceUi("Aguarde.")
+                    }
+                }
+
+                try {
+                    withTimeout(GemmaConfig.INFERENCE_TIMEOUT_MS) {
+                        gemma.describe(frame, _state.value.mode, question).collect { sentence ->
+                            if (!firstSentenceSeen) {
+                                firstSentenceSeen = true
+                                tickJob.cancelAndJoin()
+                                tts.stop()
+                                _state.update { it.copy(phase = AppPhase.Speaking) }
+                            }
+                            collected.append(sentence).append(' ')
+                            _state.update {
+                                it.copy(lastDescription = collected.toString().trim())
+                            }
+                            tts.speak(sentence)
+                        }
+                    }
+                } finally {
+                    tickJob.cancel()
+                    gemma.cancelInference()
                 }
             }
-        }.onFailure { t ->
-            Log.e(TAG, "Inference failed", t)
-            when (t) {
-                is TimeoutCancellationException ->
-                    tts.speak("Demorando demais, toque duas vezes para tentar de novo.")
-                is OutOfMemoryError ->
-                    tts.speak("Memória cheia. Aguarde dez segundos e toque de novo.")
-                !is CancellationException ->
-                    tts.speak("Erro durante a análise. Toque duas vezes para tentar de novo.")
+        } catch (e: TimeoutCancellationException) {
+            Log.e(TAG, "Inference timed out", e)
+            // Only narrate the timeout if the user hasn't heard anything yet.
+            // If narration already started, cutting in with an alert would mask
+            // the partial answer they already received.
+            if (!firstSentenceSeen) {
+                tts.speak("Demorando demais, toque duas vezes para tentar de novo.")
             }
-            gemma.cancelInference()
+        } catch (e: CancellationException) {
+            // Re-tap or VM cleared — let the caller own the next phase.
+            throw e
+        } catch (e: OutOfMemoryError) {
+            Log.e(TAG, "Inference OOM", e)
+            tts.speak("Memória cheia. Aguarde dez segundos e toque de novo.")
+        } catch (e: Throwable) {
+            Log.e(TAG, "Inference failed", e)
+            tts.speak("Erro durante a análise. Toque duas vezes para tentar de novo.")
         }
 
         _state.update {
