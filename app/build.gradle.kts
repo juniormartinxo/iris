@@ -62,6 +62,14 @@ android {
             isIncludeAndroidResources = true
         }
     }
+
+    applicationVariants.all {
+        val variant = this
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            output.outputFileName = "iris-${variant.versionName}-${variant.name}.apk"
+        }
+    }
 }
 
 tasks.withType<Test>().configureEach {
