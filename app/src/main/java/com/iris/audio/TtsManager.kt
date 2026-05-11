@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import com.iris.util.isTalkBackOn
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +65,12 @@ class TtsManager(private val context: Context) {
         } else {
             _isReady.value = false
         }
+    }
+
+    suspend fun announceUi(text: String) {
+        if (isTalkBackOn(context)) return
+        stop()
+        speak(text)
     }
 
     suspend fun speak(text: String) {
