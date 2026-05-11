@@ -86,7 +86,7 @@ fun MainScreen(viewModel: AppViewModel) {
             DescriptionStrip(state)
             ModeBar(
                 currentMode = state.mode,
-                onSelect = { mode -> viewModel.selectAndTrigger(mode) },
+                onSelect = { mode -> viewModel.selectMode(mode) },
                 onRepeat = { viewModel.repeat() },
             )
         }
