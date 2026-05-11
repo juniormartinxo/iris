@@ -34,6 +34,11 @@ iris_crash.txt
 .claude/
 .kotlin/
 .docs-archive/
+.codex
 
 # Logs
-*.log
+*.Logs
+
+
+CLAUDE.md
+AGENTS.md
