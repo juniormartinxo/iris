@@ -8,13 +8,13 @@ import com.iris.audio.TtsManager
 fun PhaseAnnouncer(state: AppState, tts: TtsManager) {
     LaunchedEffect(state.modelVariant) {
         if (state.modelVariant != null) {
-            tts.speak("Iris pronta. Toque na tela para descrever, ou use os botões na parte de baixo.")
+            tts.announceUi("Iris pronta. Toque na tela para descrever, ou use os botões na parte de baixo.")
         }
     }
     LaunchedEffect(state.phase) {
         when (val p = state.phase) {
-            is AppPhase.LoadingModel -> tts.speak("Carregando modelo. Aguarde.")
-            is AppPhase.FatalError -> tts.speak(p.message)
+            is AppPhase.LoadingModel -> tts.announceUi("Carregando modelo. Aguarde.")
+            is AppPhase.FatalError -> tts.announceUi(p.message)
             else -> {}
         }
     }
