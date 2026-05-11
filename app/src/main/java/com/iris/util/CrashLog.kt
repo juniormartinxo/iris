@@ -10,6 +10,8 @@ import java.util.Locale
 
 object CrashLog {
 
+    private const val MAX_LOG_BYTES = 64L * 1024
+
     fun install(context: Context) {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
@@ -19,8 +21,8 @@ object CrashLog {
     }
 
     private fun writeCrash(context: Context, thread: Thread, throwable: Throwable) {
-        val baseDir = context.getExternalFilesDir(null) ?: return
-        val out = File(baseDir, "iris_crash.txt")
+        val out = File(context.filesDir, "iris_crash.txt")
+        if (out.length() > MAX_LOG_BYTES) out.delete()
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
         val sw = StringWriter()
         throwable.printStackTrace(PrintWriter(sw))
