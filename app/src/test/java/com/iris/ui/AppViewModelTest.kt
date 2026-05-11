@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -61,9 +62,11 @@ class AppViewModelTest {
     @Test
     fun selectModeChangesModeWithoutTriggering() = runTest {
         val vm = newViewModel()
+        advanceUntilIdle()
         vm.state.test {
             val initial = awaitItem()
             assertEquals(AppMode.CONTINUOUS, initial.mode)
+            assertTrue("VM must be idle before selectMode", initial.phase is AppPhase.Idle)
             vm.selectMode(AppMode.READING)
             val updated = awaitItem()
             assertEquals(AppMode.READING, updated.mode)
