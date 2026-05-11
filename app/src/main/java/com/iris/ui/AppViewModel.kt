@@ -41,6 +41,8 @@ class AppViewModel(
     )
     val state: StateFlow<AppState> = _state.asStateFlow()
 
+    var onMicRequest: (() -> Unit)? = null
+
     init {
         viewModelScope.launch {
             gemma.state.collect { gs ->
@@ -75,7 +77,7 @@ class AppViewModel(
             return
         }
         if (mode == AppMode.QUESTION && !current.micGranted) {
-            viewModelScope.launch { tts.speak(MIC_REQUIRED_ALERT) }
+            handleMicMissing(current)
             return
         }
         val modeChanged = current.mode != mode
@@ -94,11 +96,22 @@ class AppViewModel(
         _state.update { it.copy(micGranted = granted) }
     }
 
+    fun setMicPermanentlyDenied(value: Boolean) {
+        if (_state.value.micPermanentlyDenied == value) return
+        _state.update { it.copy(micPermanentlyDenied = value) }
+    }
+
+    private fun handleMicMissing(current: AppState) {
+        val msg = if (current.micPermanentlyDenied) MIC_PERMANENT_ALERT else MIC_REQUIRED_ALERT
+        viewModelScope.launch { tts.speak(msg) }
+        if (!current.micPermanentlyDenied) onMicRequest?.invoke()
+    }
+
     fun trigger() {
         if (!precheckOrAlert()) return
         val current = _state.value
         if (current.mode == AppMode.QUESTION && !current.micGranted) {
-            viewModelScope.launch { tts.speak(MIC_REQUIRED_ALERT) }
+            handleMicMissing(current)
             return
         }
         viewModelScope.launch { runFlow(current.mode, announcement = null) }
@@ -308,6 +321,9 @@ class AppViewModel(
         private const val BUSY_ALERT =
             "Aguarde a análise anterior terminar."
         private const val MIC_REQUIRED_ALERT =
+            "Modo Pergunta indisponível. Iris precisa de permissão para usar o microfone. " +
+            "Vou pedir agora."
+        private const val MIC_PERMANENT_ALERT =
             "Modo Pergunta indisponível. Iris precisa de permissão para usar o microfone. " +
             "Libere nas configurações do aparelho."
     }
