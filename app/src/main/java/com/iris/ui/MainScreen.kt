@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,7 +55,9 @@ fun MainScreen(viewModel: AppViewModel) {
     LaunchedEffect(previewView) {
         val pv = previewView ?: return@LaunchedEffect
         runCatching { viewModel.cameraManager.bind(pv) }
-            .onFailure { viewModel.reportCameraBindFailure(it) }
+            .onFailure { t ->
+                if (t !is CancellationException) viewModel.reportCameraBindFailure(t)
+            }
     }
 
     Box(
