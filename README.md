@@ -1,5 +1,7 @@
 # Iris
 
+[🇧🇷 Leia em português](README-pt_br.md)
+
 An offline Android visual assistant for blind and low-vision users. Built for the **DEV.to Gemma 4 Challenge** (deadline 2026-05-24). Runs Gemma 4 multimodal entirely on-device via LiteRT-LM — no cloud calls, no internet required.
 
 ## What it does
