@@ -37,7 +37,7 @@ iris_crash.txt
 .codex
 
 # Logs
-*.Logs
+*.log
 
 
 CLAUDE.md
