@@ -22,6 +22,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -73,6 +74,36 @@ class AppViewModelTest {
             assertTrue("Phase must not become Capturing", updated.phase !is AppPhase.Capturing)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun selectQuestionWithoutMicTriggersMicRequest() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.setMicGranted(false)
+        var requested = false
+        vm.onMicRequest = { requested = true }
+        vm.selectMode(AppMode.QUESTION)
+        advanceUntilIdle()
+        assertTrue("onMicRequest must fire when mic is missing", requested)
+        assertEquals(
+            "Mode must not switch to QUESTION while mic is missing",
+            AppMode.CONTINUOUS,
+            vm.state.value.mode,
+        )
+    }
+
+    @Test
+    fun selectQuestionWithMicPermanentlyDeniedSkipsRequest() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.setMicGranted(false)
+        vm.setMicPermanentlyDenied(true)
+        var requested = false
+        vm.onMicRequest = { requested = true }
+        vm.selectMode(AppMode.QUESTION)
+        advanceUntilIdle()
+        assertFalse("onMicRequest must NOT fire when permanently denied", requested)
     }
 
     @Test
