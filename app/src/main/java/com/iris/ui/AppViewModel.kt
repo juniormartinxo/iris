@@ -83,8 +83,7 @@ class AppViewModel(
         val modeChanged = current.mode != mode
         _state.update { it.copy(mode = mode) }
         viewModelScope.launch {
-            tts.stop()
-            tts.speak(
+            tts.announceUi(
                 if (modeChanged) modeFullAnnouncement(mode)
                 else modeShortAnnouncement(mode)
             )
