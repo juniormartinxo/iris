@@ -5,6 +5,7 @@ import android.speech.SpeechRecognizer
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,6 +45,9 @@ class MainActivity : ComponentActivity() {
             IrisTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 val perms = rememberPermissionsState()
+                LaunchedEffect(perms.micGranted) {
+                    viewModel.setMicGranted(perms.micGranted)
+                }
                 val app = IrisApp.from(this)
                 val ttsAvailable by app.tts.ptBrAvailable.collectAsStateWithLifecycle()
                 val sttAvailable = remember {

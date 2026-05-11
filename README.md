@@ -34,15 +34,11 @@ Point the back camera at something and tap. Iris narrates what it sees in Brazil
    adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/com.iris/files/
    ```
 
-4. (Optional, for higher quality) Push the E4B variant too. Iris will prefer E4B when both are present.
+4. (Optional, as fallback) Push the E4B variant too. When both are present, Iris loads **E2B first** (faster, snappier UX on S21/A55) and falls back to E4B only if E2B fails to load.
 
 5. Open the app. The first launch:
    - Plays a TTS-narrated tutorial.
    - Pre-flights the offline TTS / STT packs (and opens the right Settings page if missing).
-
-## Architecture
-
-See [`docs/superpowers/specs/2026-05-09-iris-design.md`](docs/superpowers/specs/2026-05-09-iris-design.md).
 
 ## Build
 
@@ -54,9 +50,11 @@ See [`docs/superpowers/specs/2026-05-09-iris-design.md`](docs/superpowers/specs/
 ## Test
 
 ```bash
-./gradlew :app:testDebugUnitTest                     # unit tests (23 tests)
+./gradlew :app:testDebugUnitTest                     # 23 unit tests (run on JDK 21 toolchain)
 ./gradlew :app:connectedDebugAndroidTest             # instrumented (needs device)
 ```
+
+> **Note:** unit tests run on a JDK 21 toolchain (auto-downloaded by Gradle the first time) because the `litertlm` library is compiled with Java 21 bytecode. The main app code still targets JDK 17.
 
 Manual test plan: [`docs/manual-test-plan.md`](docs/manual-test-plan.md).
 

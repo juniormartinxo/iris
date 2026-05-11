@@ -10,7 +10,6 @@ sealed interface AppPhase {
     data object Listening : AppPhase
     data object Capturing : AppPhase
     data object Inferring : AppPhase
-    data object Speaking : AppPhase
     data class FatalError(val message: String) : AppPhase
 }
 
@@ -21,5 +20,5 @@ data class AppState(
     val modelVariant: String? = null,
     val tutorialDone: Boolean = false,
     val preflightDone: Boolean = false,
-    val micPermissionDenied: Boolean = false,
+    val micGranted: Boolean = true,
 )

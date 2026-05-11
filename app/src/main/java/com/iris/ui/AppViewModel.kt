@@ -15,7 +15,6 @@ import com.iris.camera.CameraManager
 import com.iris.camera.FrameQuality
 import com.iris.util.Prefs
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,8 +40,6 @@ class AppViewModel(
         AppState(tutorialDone = prefs.tutorialDone, preflightDone = prefs.preflightDone)
     )
     val state: StateFlow<AppState> = _state.asStateFlow()
-
-    private var inFlightJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -77,6 +74,10 @@ class AppViewModel(
             viewModelScope.launch { tts.speak(BUSY_ALERT) }
             return
         }
+        if (mode == AppMode.QUESTION && !current.micGranted) {
+            viewModelScope.launch { tts.speak(MIC_REQUIRED_ALERT) }
+            return
+        }
         val modeChanged = current.mode != mode
         _state.update { it.copy(mode = mode) }
         viewModelScope.launch {
@@ -88,10 +89,19 @@ class AppViewModel(
         }
     }
 
+    fun setMicGranted(granted: Boolean) {
+        if (_state.value.micGranted == granted) return
+        _state.update { it.copy(micGranted = granted) }
+    }
+
     fun trigger() {
         if (!precheckOrAlert()) return
         val current = _state.value
-        inFlightJob = viewModelScope.launch { runFlow(current.mode, announcement = null) }
+        if (current.mode == AppMode.QUESTION && !current.micGranted) {
+            viewModelScope.launch { tts.speak(MIC_REQUIRED_ALERT) }
+            return
+        }
+        viewModelScope.launch { runFlow(current.mode, announcement = null) }
     }
 
     private fun precheckOrAlert(): Boolean {
@@ -267,6 +277,23 @@ class AppViewModel(
         viewModelScope.launch { gemma.load() }
     }
 
+    override fun onCleared() {
+        runCatching { camera.unbind() }
+        runCatching { speech.cancel() }
+        super.onCleared()
+    }
+
+    fun reportCameraBindFailure(t: Throwable) {
+        Log.e(TAG, "Camera bind failed", t)
+        _state.update {
+            it.copy(
+                phase = AppPhase.FatalError(
+                    "Não consegui abrir a câmera. Verifique se outro app não está usando."
+                ),
+            )
+        }
+    }
+
     fun markTutorialDone() {
         prefs.tutorialDone = true
         _state.update { it.copy(tutorialDone = true) }
@@ -280,5 +307,8 @@ class AppViewModel(
     companion object {
         private const val BUSY_ALERT =
             "Aguarde a análise anterior terminar."
+        private const val MIC_REQUIRED_ALERT =
+            "Modo Pergunta indisponível. Iris precisa de permissão para usar o microfone. " +
+            "Libere nas configurações do aparelho."
     }
 }

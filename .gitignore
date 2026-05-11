@@ -32,3 +32,14 @@ iris_crash.txt
 
 # Claude internal
 .claude/
+.kotlin/
+.docs-archive/
+.codex
+
+# Logs
+*.Logs
+
+
+CLAUDE.md
+AGENTS.md
+.gitnexus
