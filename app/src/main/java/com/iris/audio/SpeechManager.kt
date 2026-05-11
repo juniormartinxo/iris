@@ -21,7 +21,7 @@ class SpeechManager(private val context: Context) {
         data class Error(val message: String) : SpeechResult
     }
 
-    private var recognizer: SpeechRecognizer? = null
+    @Volatile private var recognizer: SpeechRecognizer? = null
 
     fun isOfflineRecognitionAvailable(): Boolean =
         SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
@@ -29,6 +29,7 @@ class SpeechManager(private val context: Context) {
     suspend fun listen(timeoutMs: Long = LISTEN_TIMEOUT_MS): SpeechResult =
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<SpeechResult> { cont ->
+                cleanup()
                 if (!isOfflineRecognitionAvailable()) {
                     if (cont.isActive) cont.resume(SpeechResult.NoOfflineModel)
                     return@suspendCancellableCoroutine
