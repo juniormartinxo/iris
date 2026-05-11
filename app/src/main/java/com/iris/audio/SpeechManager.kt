@@ -9,6 +9,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 class SpeechManager(private val context: Context) {
@@ -25,64 +26,66 @@ class SpeechManager(private val context: Context) {
     fun isOfflineRecognitionAvailable(): Boolean =
         SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
 
-    suspend fun listen(timeoutMs: Long = 10_000): SpeechResult =
-        suspendCancellableCoroutine { cont ->
-            if (!isOfflineRecognitionAvailable()) {
-                if (cont.isActive) cont.resume(SpeechResult.NoOfflineModel)
-                return@suspendCancellableCoroutine
-            }
-
-            val rec = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
-            recognizer = rec
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
-                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,
-                    1500L)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,
-                    1500L)
-            }
-
-            rec.setRecognitionListener(object : RecognitionListener {
-                override fun onReadyForSpeech(params: Bundle?) {}
-                override fun onBeginningOfSpeech() {}
-                override fun onRmsChanged(rmsdB: Float) {}
-                override fun onBufferReceived(buffer: ByteArray?) {}
-                override fun onEndOfSpeech() {}
-
-                override fun onError(error: Int) {
-                    val result = when (error) {
-                        SpeechRecognizer.ERROR_NO_MATCH,
-                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> SpeechResult.NoInput
-                        SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED,
-                        SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> SpeechResult.NoOfflineModel
-                        else -> SpeechResult.Error("Erro de reconhecimento: $error")
-                    }
-                    cleanup()
-                    if (cont.isActive) cont.resume(result)
+    suspend fun listen(timeoutMs: Long = LISTEN_TIMEOUT_MS): SpeechResult =
+        withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<SpeechResult> { cont ->
+                if (!isOfflineRecognitionAvailable()) {
+                    if (cont.isActive) cont.resume(SpeechResult.NoOfflineModel)
+                    return@suspendCancellableCoroutine
                 }
 
-                override fun onResults(results: Bundle?) {
-                    val list = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    val text = list?.firstOrNull()?.takeIf { it.isNotBlank() }
-                    cleanup()
-                    if (cont.isActive) {
-                        cont.resume(
-                            if (text != null) SpeechResult.Recognized(text)
-                            else SpeechResult.NoInput
-                        )
-                    }
+                val rec = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
+                recognizer = rec
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
+                    putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,
+                        1500L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,
+                        1500L)
                 }
 
-                override fun onPartialResults(partialResults: Bundle?) {}
-                override fun onEvent(eventType: Int, params: Bundle?) {}
-            })
+                rec.setRecognitionListener(object : RecognitionListener {
+                    override fun onReadyForSpeech(params: Bundle?) {}
+                    override fun onBeginningOfSpeech() {}
+                    override fun onRmsChanged(rmsdB: Float) {}
+                    override fun onBufferReceived(buffer: ByteArray?) {}
+                    override fun onEndOfSpeech() {}
 
-            cont.invokeOnCancellation { cleanup() }
-            rec.startListening(intent)
-        }
+                    override fun onError(error: Int) {
+                        val result = when (error) {
+                            SpeechRecognizer.ERROR_NO_MATCH,
+                            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> SpeechResult.NoInput
+                            SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED,
+                            SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> SpeechResult.NoOfflineModel
+                            else -> SpeechResult.Error("Erro de reconhecimento: $error")
+                        }
+                        cleanup()
+                        if (cont.isActive) cont.resume(result)
+                    }
+
+                    override fun onResults(results: Bundle?) {
+                        val list = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                        val text = list?.firstOrNull()?.takeIf { it.isNotBlank() }
+                        cleanup()
+                        if (cont.isActive) {
+                            cont.resume(
+                                if (text != null) SpeechResult.Recognized(text)
+                                else SpeechResult.NoInput
+                            )
+                        }
+                    }
+
+                    override fun onPartialResults(partialResults: Bundle?) {}
+                    override fun onEvent(eventType: Int, params: Bundle?) {}
+                })
+
+                cont.invokeOnCancellation { cleanup() }
+                rec.startListening(intent)
+            }
+        } ?: SpeechResult.NoInput
 
     fun cancel() {
         cleanup()
@@ -103,5 +106,9 @@ class SpeechManager(private val context: Context) {
         runCatching { r.stopListening() }
         runCatching { r.cancel() }
         runCatching { r.destroy() }
+    }
+
+    companion object {
+        const val LISTEN_TIMEOUT_MS = 10_000L
     }
 }
