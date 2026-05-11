@@ -22,7 +22,7 @@ Point the back camera at something and tap. Iris narrates what it sees in Brazil
 
 1. Install the APK:
    ```bash
-   adb install -r app-debug.apk
+   adb install -r app/build/outputs/apk/debug/iris-0.1.0-debug.apk
    ```
 
 2. Download the Gemma 4 E2B model from Hugging Face:
