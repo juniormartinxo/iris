@@ -1,7 +1,7 @@
 # Iris
 
 <p align="center">
-  <img src="docs/assets/iris-logo-192.png" alt="Iris logo" width="128">
+  <img src="docs/assets/iris-logo-512.png" alt="Iris logo" width="128">
 </p>
 
 [🇧🇷 Leia em português](README-pt_br.md)
