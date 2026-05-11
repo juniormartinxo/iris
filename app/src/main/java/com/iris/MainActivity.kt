@@ -85,12 +85,10 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(perms.cameraGranted, perms.cameraPermanentlyDenied) {
                     if (!perms.cameraGranted) {
                         sawCameraDenied = true
-                        app.tts.stop()
-                        app.tts.speak(cameraDeniedMessage)
+                        app.tts.announceUi(cameraDeniedMessage)
                     } else if (sawCameraDenied) {
                         sawCameraDenied = false
-                        app.tts.stop()
-                        app.tts.speak(PERMISSION_RESUMED)
+                        app.tts.announceUi(PERMISSION_RESUMED)
                     }
                 }
 
