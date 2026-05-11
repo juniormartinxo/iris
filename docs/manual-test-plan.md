@@ -7,7 +7,8 @@ Run on **Galaxy S21** and **Galaxy A55** before submitting to DEV.to. Mark each 
 - [ ] APK installs cleanly on Android 12+ via `adb install`
 - [ ] Without any model file, app shows ModelMissingScreen with adb push command literal
 - [ ] After `adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/com.iris/files/`, app loads E2B (banner shows "E2B")
-- [ ] After `adb push gemma-4-E4B-it.litertlm /sdcard/Android/data/com.iris/files/`, app prefers E4B (banner shows "E4B")
+- [ ] After `adb push gemma-4-E4B-it.litertlm /sdcard/Android/data/com.iris/files/` (E2B still present), app keeps loading E2B (banner shows "E2B") — E2B is preferred per `GemmaConfig.MODEL_CANDIDATES`
+- [ ] After removing E2B from the device (only E4B remains), app falls back to E4B (banner shows "E4B")
 - [ ] Full uninstall + reinstall: tutorial plays again on first launch
 
 ## Inference (each mode)
