@@ -122,6 +122,20 @@ class AppViewModelTest {
     }
 
     @Test
+    fun selectModeFirstTimeFullThenShort() = runTest {
+        val setup = newSetup()
+        advanceUntilIdle()
+        setup.vm.selectMode(AppMode.READING)
+        advanceUntilIdle()
+        setup.vm.selectMode(AppMode.CONTINUOUS)
+        advanceUntilIdle()
+        setup.vm.selectMode(AppMode.READING)
+        advanceUntilIdle()
+        coVerify { setup.tts.announceUi("Modo Leitura selecionado. Lê em voz alta o texto da imagem.") }
+        coVerify { setup.tts.announceUi("Modo Leitura.") }
+    }
+
+    @Test
     fun phaseFollowsGemmaState() = runTest {
         val gemmaState = MutableStateFlow<GemmaManager.ModelState>(GemmaManager.ModelState.Loading)
         val vm = newSetup(gemmaState).vm
