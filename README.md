@@ -8,6 +8,8 @@
 
 An offline Android visual assistant for blind and low-vision users. Built for the **DEV.to Gemma 4 Challenge** (deadline 2026-05-24). Runs Gemma 4 multimodal entirely on-device via LiteRT-LM — no cloud calls, no internet required.
 
+> **Read the full write-up on DEV.to:** [Iris: an offline visual assistant in Brazilian Portuguese powered by Gemma 4](https://dev.to/juniormartinxo/iris-an-offline-visual-assistant-in-brazilian-portuguese-powered-by-gemma-4-2652)
+
 ## What it does
 
 Point the back camera at something and tap. Iris narrates what it sees in Brazilian Portuguese. Three modes:
